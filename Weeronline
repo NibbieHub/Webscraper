@@ -1,0 +1,34 @@
+
+import requests
+import csv
+from bs4 import BeautifulSoup
+
+URL = 'https://www.weeronline.nl/Europa/Nederland/Deurne/4058578/weersverwachting-14dagen'
+page = requests.get(URL)
+soup = BeautifulSoup(page.content, 'html.parser')
+
+results = soup.find(id='root')
+
+weer_elems = results.find_all('li', class_='wol-fourteenDays-module__tableRow___2xSac')
+with open('mycsv.csv', 'w', newline='') as f:
+    fieldnames = ["dag", "max", "min", "wind", "neerslag", "cijfer"]
+    thewriter = csv.DictWriter(f, fieldnames=fieldnames)
+    thewriter.writeheader()
+
+    for weer_elem in weer_elems:
+        dag_temp_elem = weer_elem.find('span', class_='wol-fourteenDays-module__day___3jjN4')
+        max_temp_elem = weer_elem.find('div', class_='wol-dayTemperature-module__day___XRLr7 wol-dayTemperature-module__max___MTp03')
+        min_temp_elem = weer_elem.find('div', class_='wol-dayTemperature-module__day___XRLr7 wol-dayTemperature-module__min___20cXp')
+        wind_temp_elem = weer_elem.find('img', class_='wol-weatherWindSymbol-module__icon___vum3J wol-weatherWindSymbol-module__medium___1Ov_s')
+        neerslag_temp_elem = weer_elem.find('div', class_='wol-fourteenDays-module__precipitation___2FItA')
+        cijfer_temp_elem = weer_elem.find('img', class_='wol-icon-module__icon___3Q7QS wol-weather-rating-module__rating___1q_8W wol-weather-rating-module__small___20Qp0 wol-weather-rating-module__center___3MzxO')
+
+        if None in (dag_temp_elem, max_temp_elem, min_temp_elem, wind_temp_elem, neerslag_temp_elem,cijfer_temp_elem):
+            continue
+        thewriter.writerow({
+            'dag': dag_temp_elem.text,
+            'max': max_temp_elem.text[:-1],
+            'min': min_temp_elem.text[:-1],
+            'wind': str(wind_temp_elem['alt'])[-1:],
+            'neerslag': neerslag_temp_elem.text[:-1],
+            'cijfer': str(cijfer_temp_elem['alt'])[6:]})
